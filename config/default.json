@@ -1,0 +1,26 @@
+{
+  "workspace": "/workspace",
+  "inputs": "/workspace/data/input",
+  "runs": "/workspace/runs",
+  "models": {
+    "mineru": "/workspace/models/mineru",
+    "rapidocr": "/workspace/models/rapidocr",
+    "tatr_structure": "/workspace/models/tatr",
+    "tatr_detection": "/workspace/models/tatr-detection"
+  },
+  "defaults": {
+    "dpi": 144,
+    "max_pages": null,
+    "tatr_detection_threshold": 0.6,
+    "tatr_structure_threshold": 0.5,
+    "candidate_match_iou": 0.25,
+    "mineru_table_evidence_threshold": 4
+  },
+  "runtime": {
+    "device": "cuda:0",
+    "tatr_dtype": "float32",
+    "mineru_dtype": "auto: bfloat16 when torch reports support, otherwise float32",
+    "rapidocr": "Torch CUDA preferred; ONNX Runtime CPU fallback allowed",
+    "tatr_mineru_cpu_fallback": false
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "repository": "RapidAI/RapidOCR model registry",
+  "source": "RapidOCR official model registry",
+  "files": [
+    {
+      "file": "PP-OCRv6_det_small.onnx",
+      "bytes": 9929594,
+      "sha256": "090f04abcd9d9a7498bc4ebf677e4cb9bdce1fe4197ddb7e529f1ef44e1ff94f"
+    },
+    {
+      "file": "PP-OCRv6_det_small.pth",
+      "bytes": 10248727,
+      "sha256": "fbdc74c97ea7b770ab22cbdc1bba01a52bdf1975efcf3442057356d622b05d54"
+    },
+    {
+      "file": "PP-OCRv6_rec_small.onnx",
+      "bytes": 21234383,
+      "sha256": "6f327246b50388f3c176ae304bd95767ea6dc0c9ae92153ef8cbe210b3c14884"
+    },
+    {
+      "file": "PP-OCRv6_rec_small.pth",
+      "bytes": 21326017,
+      "sha256": "0107b2ad694ccc9b1db7cf9ed3ffbc93d1795d9e08d9cf823127243a87bce516"
+    },
+    {
+      "file": "ch_ppocr_mobile_v2.0_cls_mobile.onnx",
+      "bytes": 585532,
+      "sha256": "e47acedf663230f8863ff1ab0e64dd2d82b838fceb5957146dab185a89d6215c"
+    },
+    {
+      "file": "ch_ptocr_mobile_v2.0_cls_mobile.pth",
+      "bytes": 588638,
+      "sha256": "bfe13860824b3365c0c7f7ccfcddc8ff11645c60051739ff18bc9913f60c98e1"
+    }
+  ]
+}

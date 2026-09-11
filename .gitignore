@@ -1,0 +1,8 @@
+cache/
+envs/
+models/
+vendor/
+data/
+runs/
+logs/
+__pycache__/

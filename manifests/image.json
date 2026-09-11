@@ -1,0 +1,75 @@
+[
+    {
+        "Id": "sha256:d1269f8fc1ebf7f12be6e4949f2b5e9e7fd64ff77699092e44bba37249c90b3a",
+        "RepoTags": [
+            "pdf-structure-parser:gpu"
+        ],
+        "RepoDigests": [],
+        "Parent": "",
+        "Comment": "buildkit.dockerfile.v0",
+        "Created": "2026-09-11T19:11:45.185621066+08:00",
+        "DockerVersion": "",
+        "Author": "",
+        "Config": {
+            "Hostname": "",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "LANG=C.UTF-8",
+                "GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305",
+                "PYTHON_VERSION=3.12.14",
+                "PYTHON_SHA256=5c8462af5790baf43a321a1559dbe0db06d1be4300fb85fb53c40060668e548a",
+                "HF_HOME=/workspace/cache/huggingface",
+                "XDG_CACHE_HOME=/workspace/cache",
+                "MODELSCOPE_CACHE=/workspace/cache/modelscope",
+                "PYTHONPATH=/workspace",
+                "USER=parser",
+                "LOGNAME=parser",
+                "TORCHINDUCTOR_CACHE_DIR=/workspace/cache/torchinductor"
+            ],
+            "Cmd": [
+                "/bin/bash"
+            ],
+            "ArgsEscaped": true,
+            "Image": "",
+            "Volumes": null,
+            "WorkingDir": "/workspace",
+            "Entrypoint": null,
+            "OnBuild": null,
+            "Labels": null
+        },
+        "Architecture": "amd64",
+        "Os": "linux",
+        "Size": 597755591,
+        "GraphDriver": {
+            "Data": {
+                "LowerDir": "/var/lib/docker/overlay2/ycs1yrivrqr92o46pdxss0in7/diff:/var/lib/docker/overlay2/1c752c96095af533167a12382ca2d45494aaa7ab0a3987d4ded29e29f3a6adf6/diff:/var/lib/docker/overlay2/7b5cb587de7708109dc1e5bdb0da1e4d2d781bde3f063b339ea4253c96e00742/diff:/var/lib/docker/overlay2/b7d0cbf27781021fc4697ff4a6a8c5e7db9983f4bade9ff77ffc9b541ff55a5c/diff:/var/lib/docker/overlay2/d79308e4cb55a6a57cd3947d9a22aadaeffa07508b82e7ce1b17fe23a1263b82/diff",
+                "MergedDir": "/var/lib/docker/overlay2/ue6m9musnl3vglq91upbr9sou/merged",
+                "UpperDir": "/var/lib/docker/overlay2/ue6m9musnl3vglq91upbr9sou/diff",
+                "WorkDir": "/var/lib/docker/overlay2/ue6m9musnl3vglq91upbr9sou/work"
+            },
+            "Name": "overlay2"
+        },
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:1d69a5fd31932841d7825ef4780c06f008eea65aaa9f3110fe09d5832ed5c7d8",
+                "sha256:32488c65fb2595aaf67371142ffe3ffdc39660ab83b4cfb35ebd9fdf751997ff",
+                "sha256:4a3d4f8d9fbb21dbb593489962d9f6a77bb0086315a5d3c66e67738fdf27029b",
+                "sha256:38ed9d88ee80c1d99e220af90592650b2b4126bd5bcfa2612df3fdeb42e8844c",
+                "sha256:8559935deaacfbaf61014e851216ed01efa7fc3ee170530d26e52a57209e7143",
+                "sha256:e7ea00e56b2f253f5912a30352dd07dba2663563b2a98995769a6185b88001c7"
+            ]
+        },
+        "Metadata": {
+            "LastTagTime": "2026-09-11T19:11:50.503016051+08:00"
+        }
+    }
+]

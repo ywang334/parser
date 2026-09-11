@@ -1,0 +1,26 @@
+{
+  "repository": "microsoft/table-transformer-detection",
+  "source": "Hugging Face",
+  "files": [
+    {
+      "file": "README.md",
+      "bytes": 1174,
+      "sha256": "c91e7f8199313c4d24b09e73a2f6df3141268666969346cb7b94ccb59900f5dd"
+    },
+    {
+      "file": "config.json",
+      "bytes": 1228,
+      "sha256": "ed5b93df2c3a59d473ddea853553a6d545d52bd4e9f8f72bf40b8a974aba4c1d"
+    },
+    {
+      "file": "model.safetensors",
+      "bytes": 115317516,
+      "sha256": "8f1aa73170102c038d40155e2734b343bf07e0fe12594228a8590943b01dccf7"
+    },
+    {
+      "file": "preprocessor_config.json",
+      "bytes": 273,
+      "sha256": "86a8837ae440456b0a9aef788b064921df29c20f0b67040954ce5c2fbd352c4f"
+    }
+  ]
+}

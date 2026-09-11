@@ -1,0 +1,15 @@
+{
+  "parser": "wordpipe 0.1.0",
+  "docx_engine": "lxml 6.0.2 / direct WordprocessingML",
+  "doc_converter": "LibreOffice 7.4.7.2 40(Build:2)",
+  "debian_packages": {
+    "libreoffice-writer": "4:7.4.7-1+deb12u14",
+    "fonts-noto-cjk": "1:20220127+repack1-1"
+  },
+  "docker_image": {
+    "tag": "pdf-structure-parser:gpu",
+    "id": "sha256:d1269f8fc1ebf7f12be6e4949f2b5e9e7fd64ff77699092e44bba37249c90b3a",
+    "architecture": "amd64"
+  },
+  "image_policy": "Images are skipped. Image-only Word documents are converted to PDF and routed to the frozen PDF pipeline."
+}

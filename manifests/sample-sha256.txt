@@ -1,0 +1,3 @@
+bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697  data/samples/attention.pdf
+4f0ae6e017b0e97de211da8fd97316e55bd927af5740d6ce95e1b7b1539f9407  data/samples/background-checks.pdf
+f52f80bd057313c8abec2e854c65c4d96658e72744c836e81d3048d8a5861046  data/samples/eu-energy.pdf

@@ -1,0 +1,26 @@
+{
+  "repository": "microsoft/table-transformer-structure-recognition-v1.1-all",
+  "source": "Hugging Face",
+  "files": [
+    {
+      "file": "README.md",
+      "bytes": 1056,
+      "sha256": "01eed360e0f54ad297ab347cfef208d68d8ac2c108b808147bb7af9f8d9132c8"
+    },
+    {
+      "file": "config.json",
+      "bytes": 76761,
+      "sha256": "17a8a6edfb9e394263fa6ba9b82176ebccdfcc5d6cd29121ec91572c7d6be22c"
+    },
+    {
+      "file": "model.safetensors",
+      "bytes": 115437156,
+      "sha256": "9df416575a3a36ebd0129342d4f597f14d6e5170268f3d52d28584ab4466a501"
+    },
+    {
+      "file": "preprocessor_config.json",
+      "bytes": 374,
+      "sha256": "eead409bb80e36ae85b8377642c54550f0504f65688ba3a4967950cafe461df2"
+    }
+  ]
+}
