@@ -199,7 +199,7 @@ def quality_check(table, source_words=(), stage=None):
 
 
 def merge_candidates(native_tables, detections, page, iou_threshold=0.25):
-    """Fuse proposals without letting a broad box join distinct physical tables."""
+    """Fuse accepted line tables and TATR detections into final candidates."""
     candidates = []
 
     def create(box):
@@ -233,14 +233,23 @@ def merge_candidates(native_tables, detections, page, iou_threshold=0.25):
                 matches.append((candidate, score, overlap))
         return max(matches, key=lambda item: (item[1], item[2]))[0] if matches else None
 
-    # A native result that already passed QC is strong physical-table evidence.
-    # Build these anchors before considering broad/failed native proposals, so a
-    # page-spanning text proposal cannot transitively join two valid line tables.
-    reliable_native = [table for table in native_tables if table.get("quality", {}).get("passed")]
-    weak_native = [table for table in native_tables if not table.get("quality", {}).get("passed")]
+    # Only ruled-table evidence may enter candidate fusion. A failed lines
+    # structure can still be repaired when image morphology confirms its grid.
+    eligible_native = [
+        table
+        for table in native_tables
+        if table.get("strategy") == "lines"
+        and (
+            table.get("quality", {}).get("passed")
+            or table.get("visual_grid", {}).get("strong")
+        )
+    ]
+    detections = [item for item in detections if item.get("visual_grid", {}).get("strong")]
+    reliable_native = [table for table in eligible_native if table.get("quality", {}).get("passed")]
+    repair_native = [table for table in eligible_native if not table.get("quality", {}).get("passed")]
     for table in sorted(
         reliable_native,
-        key=lambda item: (item.get("strategy") != "lines", item["bbox"][1], item["bbox"][0]),
+        key=lambda item: (item["bbox"][1], item["bbox"][0]),
     ):
         candidate = best_match(table["bbox"], candidates) or create(table["bbox"])
         candidate["native_tables"].append(table)
@@ -266,9 +275,9 @@ def merge_candidates(native_tables, detections, page, iou_threshold=0.25):
         candidate["tatr_detections"].append(detection)
         extend(candidate, detection["bbox"])
 
-    # Weak proposals are supporting evidence only. Match against immutable
-    # anchor boxes and assign to one best candidate, preventing bridge merging.
-    for table in sorted(weak_native, key=lambda item: (item["bbox"][1], item["bbox"][0])):
+    # Structurally invalid line tables are rescue proposals, never direct
+    # results. Attach each to one anchor or keep it as its own ruled candidate.
+    for table in sorted(repair_native, key=lambda item: (item["bbox"][1], item["bbox"][0])):
         candidate = best_match(table["bbox"], candidates) or create(table["bbox"])
         candidate["native_tables"].append(table)
         extend(candidate, table["bbox"])

@@ -117,13 +117,6 @@ def _table_from_pdfplumber(found, words, page_number, table_id, strategy):
         "cells": cells,
     }
     table["quality"] = quality_check(table, words_in(words, table["bbox"]), "pdfplumber")
-    # Text-strategy candidates are useful for borderless tables but require a
-    # much denser grid before bypassing visual structure recognition.
-    if strategy == "text" and (
-        table["nrows"] < 3 or table["quality"]["nonempty_cell_ratio"] < 0.60
-    ):
-        table["quality"]["passed"] = False
-        table["quality"]["issues"] = sorted(set(table["quality"]["issues"] + ["weak_borderless_native_evidence"]))
     table["issues"] = table["quality"]["issues"]
     return table
 
@@ -131,7 +124,6 @@ def _table_from_pdfplumber(found, words, page_number, table_id, strategy):
 def pdfplumber_tables(page, words, page_number):
     settings = [
         ("lines", {"vertical_strategy": "lines", "horizontal_strategy": "lines", "snap_tolerance": 3, "join_tolerance": 3}),
-        ("text", {"vertical_strategy": "text", "horizontal_strategy": "text", "min_words_vertical": 3, "min_words_horizontal": 1, "snap_tolerance": 3, "join_tolerance": 3}),
     ]
     tables = []
     for strategy, config in settings:
@@ -143,8 +135,6 @@ def pdfplumber_tables(page, words, page_number):
             )
             if duplicate is None:
                 tables.append(table)
-            elif strategy == "lines" and duplicate["strategy"] == "text":
-                tables[tables.index(duplicate)] = table
     return tables
 
 
@@ -199,6 +189,22 @@ def visual_grid_evidence(crop):
         return {"horizontal_rules": h_lines, "vertical_rules": v_lines, "intersection_pixels": intersections, "strong": h_lines >= 3 and v_lines >= 3 and intersections >= 8}
     except Exception as exc:
         return {"strong": False, "error": repr(exc)}
+
+
+def region_grid_evidence(image, page_width, page_height, bbox, padding=10):
+    """Measure ruled-table evidence in a PDF-coordinate proposal."""
+    sx, sy = image.width / page_width, image.height / page_height
+    pixel_box = [
+        max(0, int(bbox[0] * sx) - padding),
+        max(0, int(bbox[1] * sy) - padding),
+        min(image.width, int(bbox[2] * sx) + padding),
+        min(image.height, int(bbox[3] * sy) + padding),
+    ]
+    if pixel_box[2] <= pixel_box[0] or pixel_box[3] <= pixel_box[1]:
+        return {"strong": False, "pixel_crop": pixel_box, "error": "empty proposal crop"}
+    evidence = visual_grid_evidence(image.crop(pixel_box))
+    evidence["pixel_crop"] = pixel_box
+    return evidence
 
 
 def fallback_evidence(candidate, tatr_table, crop, threshold=4):
@@ -270,6 +276,29 @@ class PDFPipeline:
             atomic_json(candidate_dir / "decision.json", {"candidate": candidate, "attempts": attempts, "selected": table})
             return table, None
 
+        line_evidence = [
+            item.get("visual_grid", {})
+            for item in candidate["native_tables"] + candidate["tatr_detections"]
+            if item.get("visual_grid", {}).get("strong")
+        ]
+        attempts.append(
+            {
+                "stage": "visual-grid-candidate-gate",
+                "status": "passed" if line_evidence else "rejected",
+                "evidence": line_evidence,
+            }
+        )
+        if not line_evidence:
+            rejected = {
+                "candidate": candidate,
+                "classification": "borderless_or_false_positive",
+                "reason": "no strong horizontal/vertical ruled grid",
+                "content_preserved_as_text": True,
+                "attempts": attempts,
+            }
+            atomic_json(candidate_dir / "decision.json", rejected)
+            return None, rejected
+
         tatr_table, raw, crop = self.tatr.structure(image, page_record, candidate, words)
         crop.save(candidate_dir / "crop.png")
         atomic_json(candidate_dir / "tatr.json", raw)
@@ -337,11 +366,51 @@ class PDFPipeline:
             "ocr_runtime": None if ocr is None else {key: value for key, value in ocr.items() if key != "raw"},
             "words": words,
         }
-        native = pdfplumber_tables(plumber_page, words, page_number) if layer["reliable"] else []
+        native_all = pdfplumber_tables(plumber_page, words, page_number) if layer["reliable"] else []
+        native = []
+        prefilter_rejected = []
+        for table in native_all:
+            if table["quality"]["passed"]:
+                table["candidate_eligible"] = True
+                native.append(table)
+                continue
+            evidence = region_grid_evidence(image, record["width"], record["height"], table["bbox"])
+            table["visual_grid"] = evidence
+            table["candidate_eligible"] = bool(evidence.get("strong"))
+            if table["candidate_eligible"]:
+                native.append(table)
+            else:
+                prefilter_rejected.append(
+                    {
+                        "classification": "invalid_pdfplumber_lines",
+                        "proposal": table,
+                        "reason": "pdfplumber QC failed and no strong visual grid",
+                        "content_preserved_as_text": True,
+                    }
+                )
         detections, detection_raw = self.tatr.detect(image, record["width"], record["height"])
-        atomic_json(page_dir / "raw" / "tatr-detection.json", {"normalized": detections, "raw": detection_raw})
-        candidates = merge_candidates(native, detections, page_number, self.candidate_iou)
-        tables, rejected = [], []
+        eligible_detections = []
+        for detection in detections:
+            evidence = region_grid_evidence(image, record["width"], record["height"], detection["bbox"])
+            detection["visual_grid"] = evidence
+            detection["candidate_eligible"] = bool(evidence.get("strong"))
+            if detection["candidate_eligible"]:
+                eligible_detections.append(detection)
+            else:
+                prefilter_rejected.append(
+                    {
+                        "classification": "borderless_or_false_positive",
+                        "proposal": detection,
+                        "reason": "TATR Detection proposal has no strong visual grid",
+                        "content_preserved_as_text": True,
+                    }
+                )
+        atomic_json(
+            page_dir / "raw" / "tatr-detection.json",
+            {"normalized": detections, "eligible": eligible_detections, "raw": detection_raw},
+        )
+        candidates = merge_candidates(native, eligible_detections, page_number, self.candidate_iou)
+        tables, rejected = [], list(prefilter_rejected)
         for candidate in candidates:
             table, reject = self.process_candidate(image, record, candidate, words, page_dir)
             if table:

@@ -6,7 +6,7 @@ import pytest
 from pdfpipe.aggregate_parallel import aggregate
 from pdfpipe.cli import page_selection, probability, shard_files
 from pdfpipe.metrics import evaluate, teds
-from pdfpipe.pipeline import text_blocks, text_layer_quality
+from pdfpipe.pipeline import pdfplumber_tables, region_grid_evidence, text_blocks, text_layer_quality
 from pdfpipe.tables import merge_candidates, parse_html, quality_check, render, signature
 
 
@@ -77,23 +77,47 @@ def test_quality_check_rejects_nonrectangular_grid():
 
 
 def test_candidate_fusion_preserves_both_proposals():
-    native = {"id": "n", "bbox": [10, 10, 100, 100], "cells": [], "quality": {"passed": False}}
-    detection = {"bbox": [12, 12, 101, 101], "score": 0.9, "label": "table"}
+    native = {"id": "n", "strategy": "lines", "bbox": [10, 10, 100, 100], "cells": [], "quality": {"passed": True}}
+    detection = {"bbox": [12, 12, 101, 101], "score": 0.9, "label": "table", "visual_grid": {"strong": True}}
     result = merge_candidates([native], [detection], 1)
     assert len(result) == 1
     assert result[0]["native_tables"][0]["id"] == "n"
     assert result[0]["tatr_detections"][0]["score"] == 0.9
 
 
+def test_failed_native_proposal_is_not_a_candidate():
+    native = {"id": "prose", "strategy": "lines", "bbox": [10, 10, 100, 100], "cells": [], "quality": {"passed": False}, "visual_grid": {"strong": False}}
+    assert merge_candidates([native], [], 1) == []
+
+
+def test_failed_ruled_native_proposal_is_a_repair_candidate():
+    native = {"id": "ruled", "strategy": "lines", "bbox": [10, 10, 100, 100], "cells": [], "quality": {"passed": False}, "visual_grid": {"strong": True}}
+    result = merge_candidates([native], [], 1)
+    assert len(result) == 1
+    assert result[0]["native_tables"][0]["id"] == "ruled"
+
+
+def test_pdfplumber_uses_only_line_detection():
+    strategies = []
+
+    class Page:
+        def find_tables(self, table_settings):
+            strategies.append((table_settings["vertical_strategy"], table_settings["horizontal_strategy"]))
+            return []
+
+    assert pdfplumber_tables(Page(), [], 1) == []
+    assert strategies == [("lines", "lines")]
+
+
 def test_broad_native_box_does_not_merge_distinct_tatr_tables():
     native = [
-        {"id": "upper", "bbox": [0, 0, 100, 45], "cells": [], "quality": {"passed": True}},
-        {"id": "bridge", "bbox": [0, 0, 100, 100], "cells": [], "quality": {"passed": False}},
-        {"id": "lower", "bbox": [0, 55, 100, 100], "cells": [], "quality": {"passed": True}},
+        {"id": "upper", "strategy": "lines", "bbox": [0, 0, 100, 45], "cells": [], "quality": {"passed": True}},
+        {"id": "bridge", "strategy": "lines", "bbox": [0, 0, 100, 100], "cells": [], "quality": {"passed": False}, "visual_grid": {"strong": False}},
+        {"id": "lower", "strategy": "lines", "bbox": [0, 55, 100, 100], "cells": [], "quality": {"passed": True}},
     ]
     detections = [
-        {"bbox": [10, 5, 90, 40], "score": 0.95, "label": "table"},
-        {"bbox": [10, 60, 90, 95], "score": 0.94, "label": "table"},
+        {"bbox": [10, 5, 90, 40], "score": 0.95, "label": "table", "visual_grid": {"strong": True}},
+        {"bbox": [10, 60, 90, 95], "score": 0.94, "label": "table", "visual_grid": {"strong": True}},
     ]
     result = merge_candidates(native, detections, 1)
     assert len(result) == 2
@@ -119,7 +143,7 @@ def test_broad_tatr_box_does_not_merge_reliable_native_tables():
         {"id": "upper", "strategy": "lines", "bbox": [0, 0, 100, 40], "cells": [], "quality": {"passed": True}},
         {"id": "lower", "strategy": "lines", "bbox": [0, 60, 100, 100], "cells": [], "quality": {"passed": True}},
     ]
-    detections = [{"bbox": [5, 0, 95, 100], "score": 0.9, "label": "table"}]
+    detections = [{"bbox": [5, 0, 95, 100], "score": 0.9, "label": "table", "visual_grid": {"strong": True}}]
     result = merge_candidates(native, detections, 1)
     assert len(result) == 2
     assert sum(len(candidate["tatr_detections"]) for candidate in result) == 1
@@ -136,6 +160,20 @@ def test_text_layer_and_table_exclusion():
     blocks = text_blocks(words, [[0, 15, 60, 35]])
     assert len(blocks) == 1
     assert "native text" in blocks[0]["text"]
+
+
+def test_visual_grid_is_required_for_visual_candidates():
+    from PIL import Image, ImageDraw
+
+    blank = Image.new("RGB", (300, 200), "white")
+    assert not region_grid_evidence(blank, 300, 200, [0, 0, 300, 200], padding=0)["strong"]
+    grid = blank.copy()
+    draw = ImageDraw.Draw(grid)
+    for x in (20, 150, 280):
+        draw.line((x, 10, x, 190), fill="black", width=3)
+    for y in (10, 100, 190):
+        draw.line((20, y, 280, y), fill="black", width=3)
+    assert region_grid_evidence(grid, 300, 200, [0, 0, 300, 200], padding=0)["strong"]
 
 
 def test_escaped_output():
